@@ -26,31 +26,31 @@ def read_root():
 @app.post("/api/download")
 def download_media(url: str, format_type: str = "video", background_tasks: BackgroundTasks = None):
     try:
+        # اختيار صيغ جاهزة ومدمجة مسبقاً لتجنب الحاجة لـ FFmpeg
+        if format_type == "audio":
+            format_str = "bestaudio/best"
+        else:
+            # يجلب مقطع مدمج (صوت + فيديو معاً) بصيغة mp4 مباشرة
+            format_str = "best[ext=mp4]/b[ext=mp4]/best"
+
         ydl_opts = {
+            'format': format_str,
             'outtmpl': os.path.join(DOWNLOAD_DIR, '%(id)s.%(ext)s'),
             'noplaylist': True,
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True,
-            # استراتيجية جلب بدون الحاجة لدمج معقد قد يحتاج FFmpeg
-            'format': 'best[ext=mp4]/bestvideo+bestaudio/best' if format_type == "video" else 'bestaudio/best',
         }
-
-        if format_type == "audio":
-            ydl_opts.update({
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-            })
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
+            base_id = info.get('id')
+            
+            # تحديد اسم الملف المحمل
             filename = ydl.prepare_filename(info)
 
+        # التحقق من وجود الملف أو البحث عنه في مجلد التنزيلات
         if not os.path.exists(filename):
-            base_id = info.get('id')
             matching_files = [os.path.join(DOWNLOAD_DIR, f) for f in os.listdir(DOWNLOAD_DIR) if base_id in f]
             if matching_files:
                 filename = matching_files[0]
@@ -67,5 +67,5 @@ def download_media(url: str, format_type: str = "video", background_tasks: Backg
         )
 
     except Exception as e:
-        print("Download Error:", str(e))
+        print("Detailed Error:", str(e))
         raise HTTPException(status_code=400, detail=str(e))
