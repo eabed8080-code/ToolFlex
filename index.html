@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToolFlex - YouTube Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .hidden { display: none; }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-2xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
+                <span class="text-red-600">Tool</span>Flex
+            </h1>
+            <p class="text-gray-600 text-lg">Fast & Simple YouTube Downloader</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="glass rounded-2xl shadow-xl p-6 md:p-8">
+            
+            <!-- Input Section -->
+            <div class="flex flex-col md:flex-row gap-3 mb-6">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fab fa-youtube text-red-500"></i>
+                    </div>
+                    <input type="text" id="videoUrl" 
+                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 sm:text-sm" 
+                        placeholder="Paste YouTube link here...">
+                </div>
+                <button id="fetchBtn" 
+                    class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                    <span id="fetchBtnText">Fetch Info</span>
+                    <i id="fetchSpinner" class="fas fa-circle-notch spinner hidden ml-2"></i>
+                </button>
+            </div>
+
+            <!-- Preview Section (Initially Hidden) -->
+            <div id="previewCard" class="hidden border-t border-gray-100 pt-6 animate-fade-in">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <img id="thumbnail" src="" alt="Thumbnail" class="w-full md:w-48 h-32 object-cover rounded-lg shadow-sm">
+                    <div class="flex-grow flex flex-col justify-between">
+                        <div>
+                            <h3 id="videoTitle" class="text-lg font-bold text-gray-900 line-clamp-2 mb-1">Video Title</h3>
+                            <p id="videoDuration" class="text-sm text-gray-500"><i class="far fa-clock mr-1"></i> 00:00</p>
+                        </div>
+                        
+                        <div class="mt-4 flex gap-2">
+                            <select id="downloadType" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md">
+                                <option value="video">Video (MP4)</option>
+                                <option value="audio">Audio (MP3)</option>
+                            </select>
+                            <button id="downloadBtn" 
+                                class="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-black focus:outline-none">
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section (Initially Hidden) -->
+                <div id="progressSection" class="hidden mt-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div class="flex justify-between mb-2">
+                        <span id="statusLabel" class="text-sm font-medium text-gray-700 italic">Starting download...</span>
+                        <span id="progressPercent" class="text-sm font-bold text-red-600">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progressBar" class="bg-red-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 text-sm">
+                <i class="fas fa-exclamation-circle mr-2"></i> <span id="errorText">Error message here</span>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <p class="mt-8 text-center text-gray-400 text-sm">
+            © 2024 ToolFlex. For educational purposes only.
+        </p>
+    </div>
+
+    <script>
+        const API_BASE = ''; // Use relative paths for better compatibility
+        
+        const videoUrlInput = document.getElementById('videoUrl');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const fetchBtnText = document.getElementById('fetchBtnText');
+        const fetchSpinner = document.getElementById('fetchSpinner');
+        const previewCard = document.getElementById('previewCard');
+        const thumbnail = document.getElementById('thumbnail');
+        const videoTitle = document.getElementById('videoTitle');
+        const videoDuration = document.getElementById('videoDuration');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadType = document.getElementById('downloadType');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const statusLabel = document.getElementById('statusLabel');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        let currentVideoInfo = null;
+        let activeTaskId = null;
+        let pollInterval = null;
+
+        function showError(msg) {
+            errorText.innerText = msg;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => errorMessage.classList.add('hidden'), 5000);
+        }
+
+        async function fetchVideoInfo() {
+            const url = videoUrlInput.value.trim();
+            if (!url) return showError('Please enter a YouTube URL');
+
+            // Reset UI
+            errorMessage.classList.add('hidden');
+            previewCard.classList.add('hidden');
+            progressSection.classList.add('hidden');
+            fetchBtn.disabled = true;
+            fetchBtnText.innerText = 'Fetching...';
+            fetchSpinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/fetch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to fetch video info');
+                }
+                currentVideoInfo = data;
+
+                // Update UI
+                thumbnail.src = data.thumbnail;
+                videoTitle.innerText = data.title;
+                videoDuration.innerText = data.duration;
+                previewCard.classList.remove('hidden');
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtnText.innerText = 'Fetch Info';
+                fetchSpinner.classList.add('hidden');
+            }
+        }
+
+        async function startDownload() {
+            if (!currentVideoInfo) return;
+
+            const type = downloadType.value;
+            const url = encodeURIComponent(currentVideoInfo.url);
+
+            downloadBtn.disabled = true;
+            progressSection.classList.remove('hidden');
+            statusLabel.innerText = 'Requesting download...';
+            progressBar.style.width = '0%';
+            progressPercent.innerText = '0%';
+
+                        try {
+                const response = await fetch(`${API_BASE}/api/download/start?url=${url}&type=${type}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to start download');
+                }
+                
+                activeTaskId = data.task_id;
+                
+                // Start polling
+                pollStatus();
+            } catch (err) {
+                showError(err.message || 'Failed to start download');
+                downloadBtn.disabled = false;
+            }
+        }
+
+                function pollStatus() {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                if (!activeTaskId) return;
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/download/status/${activeTaskId}`);
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+
+                    // Correctly read status and progress from the response
+                    const status = data.status || 'starting';
+                    const progress = typeof data.progress === 'number' ? data.progress : 0;
+                    const error = data.error;
+
+                    statusLabel.innerText = getStatusMessage(status);
+                    progressBar.style.width = `${progress}%`;
+                    progressPercent.innerText = `${Math.round(progress)}%`;
+
+                    if (status === 'completed') {
+                        clearInterval(pollInterval);
+                        statusLabel.innerText = 'Download ready! Starting file save...';
+                        triggerFileDownload(activeTaskId);
+                        downloadBtn.disabled = false;
+                    } else if (status === 'failed') {
+                        clearInterval(pollInterval);
+                        showError(error || 'Download failed');
+                        downloadBtn.disabled = false;
+                    }
+                } catch (err) {
+                    console.error('Polling error:', err);
+                }
+            }, 1000);
+        }
+
+        function getStatusMessage(status) {
+            switch(status) {
+                case 'starting': return 'Initializing...';
+                case 'downloading': return 'Downloading from YouTube...';
+                case 'processing': return 'Processing file (this may take a moment)...';
+                case 'completed': return 'Finished!';
+                case 'failed': return 'Error occurred';
+                default: return 'Status: ' + status;
+            }
+        }
+
+        function triggerFileDownload(taskId) {
+            window.location.href = `${API_BASE}/api/download/file/${taskId}`;
+        }
+
+        fetchBtn.addEventListener('click', fetchVideoInfo);
+        downloadBtn.addEventListener('click', startDownload);
+        
+        videoUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchVideoInfo();
+        });
+    </script>
+</body>
+</html>
+
+Generating
+StopCtrl⌫
+
+

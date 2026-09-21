@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToolFlex - Universal Media & File Tools</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-xl flex items-center justify-center w-10 h-10 shadow-md shadow-blue-500/20">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span class="text-2xl font-extrabold tracking-wide text-slate-900">Tool<span class="text-blue-600">Flex</span></span>
+            </div>
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold">
+                <a href="#downloader" class="text-blue-600 border-b-2 border-blue-600 pb-1 flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Downloader
+                </a>
+                <a href="#" class="text-slate-500 hover:text-slate-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> Converter <span class="bg-blue-50 text-xs text-blue-600 px-2 py-0.5 rounded-full border border-blue-200">Soon</span>
+                </a>
+                <a href="#" class="text-slate-500 hover:text-slate-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-scissors"></i> Editor <span class="bg-blue-50 text-xs text-blue-600 px-2 py-0.5 rounded-full border border-blue-200">Soon</span>
+                </a>
+                <a href="#" class="text-slate-500 hover:text-slate-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-lines"></i> Office Tools <span class="bg-blue-50 text-xs text-blue-600 px-2 py-0.5 rounded-full border border-blue-200">Soon</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-4 py-12 w-full flex-grow">
+        <section id="downloader" class="space-y-8 text-center">
+            <div class="space-y-3">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">Universal Media Downloader</h1>
+                <p class="text-slate-600 text-base md:text-lg max-w-xl mx-auto">Download videos and audio instantly from YouTube and supported platforms in high quality.</p>
+            </div>
+
+            <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-xl max-w-2xl mx-auto">
+                <form id="downloadForm" onsubmit="handleFetch(event)" class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-link absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="url" id="videoUrl" placeholder="Paste video or audio link here..." required class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-11 pr-20 py-3.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition text-sm md:text-base">
+                        <button type="button" onclick="pasteClipboard()" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1.5 rounded-lg transition font-medium">Paste</button>
+                    </div>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Fetch</span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="loading" class="hidden py-8">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+                <p class="text-slate-500 text-sm mt-3 font-medium">Fetching video details from YouTube...</p>
+            </div>
+
+            <div id="resultCard" class="hidden bg-white border border-slate-200 rounded-2xl p-6 max-w-2xl mx-auto text-left space-y-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row gap-4 items-center">
+                    <img id="thumbImg" src="" alt="Thumbnail" class="w-full sm:w-40 h-28 object-cover rounded-xl border border-slate-200 shadow-sm">
+                    <div class="space-y-1 text-center sm:text-left flex-grow">
+                        <h3 id="videoTitle" class="font-bold text-slate-900 text-lg line-clamp-2"></h3>
+                        <p id="videoDuration" class="text-slate-500 text-sm"></p>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Available Formats</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button onclick="triggerDownload('video')" class="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-400 rounded-xl transition group">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-video text-blue-600 group-hover:scale-110 transition"></i>
+                                <div class="text-left">
+                                    <div class="text-sm font-semibold text-slate-800">MP4 Video</div>
+                                    <div class="text-xs text-slate-500">Best Quality (Video + Audio)</div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-download text-slate-400 group-hover:text-blue-600 transition"></i>
+                        </button>
+
+                        <button onclick="triggerDownload('audio')" class="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 rounded-xl transition group">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-music text-emerald-600 group-hover:scale-110 transition"></i>
+                                <div class="text-left">
+                                    <div class="text-sm font-semibold text-slate-800">MP3 Audio</div>
+                                    <div class="text-xs text-slate-500">Extract High Quality Audio</div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-download text-slate-400 group-hover:text-emerald-400 transition"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white py-6 text-center text-slate-500 text-sm">
+        <p>&copy; 2026 ToolFlex. Built for personal media management.</p>
+    </footer>
+
+    <script>
+        let currentUrl = '';
+
+        async function pasteClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('videoUrl').value = text;
+            } catch (err) {
+                alert('Please paste the URL manually.');
+            }
+        }
+
+        async function handleFetch(e) {
+            e.preventDefault();
+            const url = document.getElementById('videoUrl').value;
+            if(!url) return;
+
+            currentUrl = url;
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('resultCard').classList.add('hidden');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if(!response.ok) throw new Error('Failed to fetch video details.');
+
+                const data = await response.json();
+                document.getElementById('videoTitle').innerText = data.title;
+                document.getElementById('videoDuration').innerHTML = `<i class="fa-regular fa-clock mr-1"></i> Duration: ${data.duration || 'N/A'}`;
+                document.getElementById('thumbImg').src = data.thumbnail;
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('resultCard').classList.remove('hidden');
+            } catch (err) {
+                document.getElementById('loading').classList.add('hidden');
+                alert('Error fetching video: ' + err.message);
+            }
+        }
+
+        function triggerDownload(type) {
+            if(!currentUrl) return;
+            window.location.href = `http://127.0.0.1:8000/api/download?url=${encodeURIComponent(currentUrl)}&type=${type}`;
+        }
+    </script>
+</body>
+</html>
