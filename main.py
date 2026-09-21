@@ -32,32 +32,24 @@ def download_media(url: str, format_type: str = "video", background_tasks: Backg
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True,
+            # استراتيجية جلب بدون الحاجة لدمج معقد قد يحتاج FFmpeg
+            'format': 'best[ext=mp4]/bestvideo+bestaudio/best' if format_type == "video" else 'bestaudio/best',
         }
 
         if format_type == "audio":
             ydl_opts.update({
-                'format': 'bestaudio/best',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
             })
-        else:
-            # استخدام صيغة mp4 المدمجة الجاهزة لتفادي الحاجة لدمج FFmpeg
-            ydl_opts.update({
-                'format': 'best[ext=mp4]/best',
-            })
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
-            
-            if format_type == "audio":
-                filename = os.path.splitext(filename)[0] + ".mp3"
 
         if not os.path.exists(filename):
-            # البحث عن أي ملف بنفس المعرف في حال تغير الامتداد
             base_id = info.get('id')
             matching_files = [os.path.join(DOWNLOAD_DIR, f) for f in os.listdir(DOWNLOAD_DIR) if base_id in f]
             if matching_files:
